@@ -4,6 +4,7 @@ using Impute
 using CairoMakie
 using AlgebraOfGraphics
 using Plots 
+using StatsBase
 
 include("dataProcessing.jl")
 
@@ -33,6 +34,12 @@ cleanMarketData =
     exchangesMktData -> filter(:MarketDate => >=(Date("2018-01-02","y-m-d")),exchangesMktData)|>
     exchangesMktData -> transform(exchangesMktData,:Price .=> ByRow(Float64),renamecols = false) |>
     exchangesMktData -> transform(groupby(exchangesMktData,:Exchange),:MarketDate => :MarketDate,:Price .=> returnFunction => :Returns)
+
+summaryStatistics = combine(groupby(cleanMarketData,:Exchange),:Returns .=> 
+                                    [length,minimum,maximum,mean,median,std,skewness,kurtosis] .=> 
+                                    [:Nobs,:Min,:Max,:Mean,:Median,:Stdev,:Skewness,:Kurtosis]) 
+
+summaryStatistics = hcat(summaryStatistics[:,[:1,:2]],round.(summaryStatistics[:,:3:end];digits=2))
 
     
 function  generateReturnPlot(cleanMarketData::AbstractDataFrame,Exchange::String,column::String)
